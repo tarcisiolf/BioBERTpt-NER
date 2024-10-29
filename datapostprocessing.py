@@ -25,6 +25,7 @@ def create_dataframe_with_result_ner_format(df_result):
 
 
 # Função de mapeamento com base nas entidades e palavras do relatório
+"""
 def extract_info_from_report(report_df):
     nodule_data = {
         'solid': "Não",
@@ -41,7 +42,7 @@ def extract_info_from_report(report_df):
     atenuacoes_semissolido = ['subsólido', 'semissólido', 'semissólida', 'densidade de partes moles', 'densidade partes moles', 'atenuação de partes moles']
     atenuacoes_vidro_fosco = ['atenuação com vidro fosco', 'atenuação em vidro fosco', 'totalmente em vidro fosco', 'em vidro fosco']
     calcificacoes = ['calcificado', 'calcificados', 'hiperdensa', 'hiperdensas']
-
+    bordas = ['contornos irregulares', 'irregulares', 'margens espiculadas', 'espiculadas']
     # Variáveis auxiliares para construir entidades compostas
     current_entity = None
     current_value = []
@@ -78,6 +79,83 @@ def extract_info_from_report(report_df):
             lower_Token = Token.lower()
             if lower_Token in calcificacoes:
                 nodule_data['calcified'] = "Sim"
+        elif tag_pred == 'B-BOR':
+            lower_Token = Token.lower()
+            #print(lower_Token)
+            if lower_Token in bordas:
+                nodule_data['irregular'].append(" ".join(current_value))
+
+    # Armazenar a última entidade processada
+    if current_entity:
+        if current_entity == 'LOC':
+            nodule_data['location'].append(" ".join(current_value))
+        elif current_entity == 'TAM':
+            nodule_data['size'].append("".join(current_value))
+    
+    return nodule_data
+
+"""
+def extract_info_from_report(report_df):
+    nodule_data = {
+        'solid': "Não",
+        'semisolid': "Não",
+        'glass': "Não",
+        'irregular': "Não",
+        'calcified': "Não",
+        'location': [],
+        'size': []
+    }
+    
+    # Lista de palavras relacionadas às diferentes atenuações
+    atenuacoes_solido = ['sólido', 'sólidos']
+    atenuacoes_semissolido = ['subsólido', 'semissólido', 'semissólida', 'densidade de partes moles', 'densidade partes moles', 'atenuação de partes moles']
+    atenuacoes_vidro_fosco = ['atenuação com vidro fosco', 'atenuação em vidro fosco', 'totalmente em vidro fosco', 'em vidro fosco']
+    calcificacoes = ['calcificado', 'calcificados', 'hiperdensa', 'hiperdensas']
+    bordas = ['contornos irregulares', 'irregulares', 'margens espiculadas', 'espiculadas']
+    
+    # Variáveis auxiliares para construir entidades compostas
+    current_entity = None
+    current_value = []
+    
+    for _, row in report_df.iterrows():
+        Token = row['Token']
+        tag_pred = row['IOB_label_pred']
+        
+        # Tratamento para novas entidades com 'B-'
+        if tag_pred.startswith('B-'):
+            # Armazenar a entidade anterior
+            if current_entity:
+                if current_entity == 'LOC':
+                    nodule_data['location'].append(" ".join(current_value))
+                elif current_entity == 'TAM':
+                    nodule_data['size'].append("".join(current_value))
+                    
+            # Iniciar uma nova entidade
+            current_entity = tag_pred.split('-')[1]
+            current_value = [Token]
+        
+        # Tratamento para continuidade de entidades com 'I-'
+        elif tag_pred.startswith('I-') and current_entity == tag_pred.split('-')[1]:
+            current_value.append(Token)
+        
+        # Verificação para atributos específicos de acordo com 'B-' e 'I-' em 'ACH', 'CAL', 'BOR'
+        entity_text = " ".join(current_value).lower()
+        
+        if current_entity == 'ATE':
+            if entity_text  in atenuacoes_solido:
+                nodule_data['solid'] = "Sim"
+            elif entity_text  in atenuacoes_semissolido:
+                nodule_data['semisolid'] = "Sim"
+            elif entity_text  in atenuacoes_vidro_fosco:
+                nodule_data['glass'] = "Sim"
+        
+        elif current_entity == 'CAL':
+            if entity_text in calcificacoes:
+                nodule_data['calcified'] = "Sim"
+        
+        elif current_entity == 'BOR':
+            if entity_text  in bordas:
+                nodule_data['irregular'] = "Sim"
 
     # Armazenar a última entidade processada
     if current_entity:
