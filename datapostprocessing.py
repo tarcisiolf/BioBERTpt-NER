@@ -309,6 +309,6 @@ if __name__ == '__main__':
     df_results_post_processed = structured_size(df_results_post_processed)
     df_results_post_processed = converted_size(df_results_post_processed)
     df_results_post_processed = df_results_post_processed.rename(columns={"Tamanho do nódulo": "Tamanho do nódulo (mm)"})
-    df_results_post_processed.to_csv('data/df_results_post_processed.csv', encoding='utf-8', index=False)
+    df_results_post_processed.to_csv('data/biobertpt_results_post_processed.csv', encoding='utf-8', index=False)
 
 
